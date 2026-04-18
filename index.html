@@ -25,6 +25,8 @@
   --accent-lease-glow: rgba(108,140,255,0.25);
   --accent-buyout: #c084fc;
   --accent-buyout-dim: rgba(192,132,252,0.12);
+  --accent-cash: #f59e0b;
+  --accent-cash-dim: rgba(245,158,11,0.12);
   --accent-warn: #ff6b6b;
   --accent-gold: #f0c040;
   --radius: 14px;
@@ -53,6 +55,8 @@
   --accent-lease-glow: rgba(75,111,232,0.15);
   --accent-buyout: #9333ea;
   --accent-buyout-dim: rgba(147,51,234,0.08);
+  --accent-cash: #d97706;
+  --accent-cash-dim: rgba(217,119,6,0.08);
   --shadow: 0 4px 24px rgba(0,0,0,0.08);
 }
 
@@ -129,6 +133,7 @@ body::before {
 .dot-lease { background: var(--accent-lease); }
 .dot-buyout { background: var(--accent-buyout); }
 .dot-gold { background: var(--accent-gold); }
+.dot-cash { background: var(--accent-cash); }
 
 /* FORMS */
 .form-group { margin-bottom: 16px; }
@@ -204,6 +209,11 @@ body::before {
   content: ''; position: absolute; inset: 0;
   background: var(--accent-buyout-dim); pointer-events: none;
 }
+.result-card.cash-highlight { border-color: var(--accent-cash); }
+.result-card.cash-highlight::before {
+  content: ''; position: absolute; inset: 0;
+  background: var(--accent-cash-dim); pointer-events: none;
+}
 
 .result-label {
   font-size: 11px; font-weight: 600; text-transform: uppercase;
@@ -220,6 +230,7 @@ body::before {
 .finance-color { color: var(--accent-finance); }
 .lease-color { color: var(--accent-lease); }
 .buyout-color { color: var(--accent-buyout); }
+.cash-color { color: var(--accent-cash); }
 
 .winner-badge {
   display: inline-flex; align-items: center; gap: 4px;
@@ -270,6 +281,7 @@ body::before {
 }
 .tag-own { background: var(--accent-finance-dim); color: var(--accent-finance); }
 .tag-lease-own { background: var(--accent-buyout-dim); color: var(--accent-buyout); }
+.tag-cash { background: var(--accent-cash-dim); color: var(--accent-cash); }
 
 /* DIFFERENCE CALLOUT */
 .diff-callout {
@@ -486,6 +498,13 @@ body::before {
           </div>
         </div>
         <div class="form-group">
+          <label>Lease Down Payment</label>
+          <div class="input-wrap">
+            <span class="input-prefix">$</span>
+            <input type="number" id="leaseDown" value="5000" min="0" step="500" oninput="calc()">
+          </div>
+        </div>
+        <div class="form-group">
           <label>Residual Value</label>
           <div class="form-row">
             <div class="input-wrap">
@@ -511,30 +530,39 @@ body::before {
         </div>
       </div>
 
-      <!-- BUYOUT Section (NEW) -->
+      <!-- BUYOUT Section -->
       <div class="card animate" style="margin-top:20px;animation-delay:0.35s">
-        <div class="card-title"><span class="dot dot-buyout"></span> Lease Buyout Financing</div>
+        <div class="card-title"><span class="dot dot-buyout"></span> Lease Buyout Options</div>
         <p style="font-size:12px;color:var(--text-3);margin-bottom:16px;line-height:1.6;">
-          If you plan to buy the car at the end of the lease, configure the buyout loan terms below. The buyout price equals the residual value + tax.
+          If you plan to buy the car at the end of the lease, choose how you'll pay for the buyout.
         </p>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Buyout Loan Term</label>
-            <div class="input-wrap">
-              <input type="number" id="buyoutTerm" value="24" min="1" max="84" oninput="calc()">
-              <span class="input-suffix">mo</span>
-            </div>
+        <div class="form-group">
+          <label>Buyout Payment Method</label>
+          <div class="toggle-group">
+            <button class="active" id="buyoutFinBtn" onclick="setBuyoutMode('finance')">Finance</button>
+            <button id="buyoutCashBtn" onclick="setBuyoutMode('cash')">Cash</button>
           </div>
-          <div class="form-group">
-            <label>Buyout APR</label>
-            <div class="input-wrap">
-              <input type="number" id="buyoutRate" value="5.49" min="0" max="30" step="0.01" oninput="calc()">
-              <span class="input-suffix">%</span>
+        </div>
+        <div id="buyoutFinFields">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Buyout Loan Term</label>
+              <div class="input-wrap">
+                <input type="number" id="buyoutTerm" value="24" min="1" max="84" oninput="calc()">
+                <span class="input-suffix">mo</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Buyout APR</label>
+              <div class="input-wrap">
+                <input type="number" id="buyoutRate" value="5.49" min="0" max="30" step="0.01" oninput="calc()">
+                <span class="input-suffix">%</span>
+              </div>
             </div>
           </div>
         </div>
-        <div class="form-group">
-          <label>Buyout Loan Amount (auto-calculated)</label>
+        <div class="form-group" style="margin-top:4px;">
+          <label>Buyout Amount (auto-calculated: residual + tax)</label>
           <div class="computed-value" id="buyoutAmount" style="color:var(--accent-buyout)">$0.00</div>
         </div>
       </div>
@@ -547,16 +575,21 @@ body::before {
       <div class="summary-section animate" style="animation-delay:0.08s;border-left:3px solid var(--accent-gold);">
         <div class="card-title"><span class="dot dot-gold"></span> Total Cost to Own — Summary</div>
 
-        <div class="compare-grid" style="margin-bottom:20px;">
+        <div class="compare-grid-3" style="margin-bottom:20px;">
           <div class="result-card" id="summFinCard">
             <div class="result-label">Finance Direct</div>
             <div class="result-value finance-color" id="summFinTotal">$0</div>
             <div class="result-sub" id="summFinSub">60 months</div>
           </div>
           <div class="result-card" id="summBuyoutCard">
-            <div class="result-label">Lease + Buyout</div>
+            <div class="result-label">Lease + Financed Buyout</div>
             <div class="result-value buyout-color" id="summBuyoutTotal">$0</div>
             <div class="result-sub" id="summBuyoutSub">36 + 24 months</div>
+          </div>
+          <div class="result-card" id="summCashCard">
+            <div class="result-label">Lease + Cash Buyout</div>
+            <div class="result-value cash-color" id="summCashTotal">$0</div>
+            <div class="result-sub" id="summCashSub">36 mo + cash</div>
           </div>
         </div>
 
@@ -614,6 +647,40 @@ body::before {
           </div>
         </div>
 
+        <!-- Lease + Cash Buyout breakdown -->
+        <div style="margin-top:24px;">
+          <div class="card-title" style="margin-bottom:10px"><span class="dot dot-cash"></span> Lease + Cash Buyout Breakdown</div>
+          <div class="summary-col">
+            <div class="summary-row" style="color:var(--text);font-weight:600;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;padding-bottom:2px;">
+              <span>Phase 1: Lease</span><span id="scPhase1Term">36 mo</span>
+            </div>
+            <div class="summary-row indent"><span class="k">Lease down payment</span><span class="v" id="scLeaseDown">—</span></div>
+            <div class="summary-row indent"><span class="k">Monthly lease payment</span><span class="v" id="scLeaseMonthly">—</span></div>
+            <div class="summary-row indent"><span class="k">Total lease payments</span><span class="v" id="scLeaseTotal">—</span></div>
+            <div class="summary-row indent"><span class="k">Lease finance charges</span><span class="v" id="scLeaseCharges">—</span></div>
+            <div class="summary-row indent"><span class="k">Lease-end tax (on residual)</span><span class="v" id="scLeaseTax">—</span></div>
+            <div class="summary-divider"></div>
+            <div class="summary-row" style="color:var(--text);font-weight:600;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;padding-bottom:2px;">
+              <span>Phase 2: Cash Buyout</span><span>Lump sum</span>
+            </div>
+            <div class="summary-row indent"><span class="k">Buyout price (residual)</span><span class="v" id="scResidual">—</span></div>
+            <div class="summary-row indent"><span class="k">Tax on buyout (GST + PST)</span><span class="v" id="scBuyoutTax">—</span></div>
+            <div class="summary-row indent"><span class="k">Cash paid at buyout</span><span class="v cash-color" id="scCashPaid">—</span></div>
+            <div class="summary-row indent"><span class="k">Interest on buyout</span><span class="v" style="color:var(--accent-finance)">$0.00</span></div>
+            <div class="summary-divider"></div>
+            <div class="summary-row"><span class="k">Total interest + charges (lease only)</span><span class="v" id="scTotalInterest">—</span></div>
+            <div class="summary-row"><span class="k">Total tax paid</span><span class="v" id="scTotalTax">—</span></div>
+            <div class="summary-row total"><span class="k">Total cost to own <span class="tag-pill tag-cash">Cash Buyout</span></span><span class="v cash-color" id="scTotal">—</span></div>
+          </div>
+          <div class="diff-callout" style="margin-top:16px;" id="cashDiffCallout">
+            <div>
+              <div class="result-label">Cash vs Financed Buyout Savings</div>
+              <div class="diff-amount cash-color" id="cashSavings">$0</div>
+            </div>
+            <div class="diff-detail" id="cashDiffDetail"></div>
+          </div>
+        </div>
+
         <!-- Where the money goes chart -->
         <div style="margin-top:24px;">
           <div class="card-title" style="margin-bottom:10px"><span class="dot dot-gold"></span> Where the Extra Cost Goes</div>
@@ -627,7 +694,7 @@ body::before {
               <div class="result-value" style="font-size:20px;color:var(--accent-warn)" id="diffTax">$0</div>
             </div>
           </div>
-          <div class="chart-wrap" style="margin-top:14px;height:240px"><canvas id="costStackCanvas"></canvas></div>
+          <div class="chart-wrap" style="margin-top:14px;height:280px"><canvas id="costStackCanvas"></canvas></div>
         </div>
       </div>
 
@@ -651,14 +718,14 @@ body::before {
         </div>
         <div style="margin-top:16px;overflow-x:auto;">
           <table class="compare-table">
-            <thead><tr><th>Metric</th><th style="color:var(--accent-finance)">Finance</th><th style="color:var(--accent-lease)">Lease Only</th><th style="color:var(--accent-buyout)">Lease+Buyout</th></tr></thead>
+            <thead><tr><th>Metric</th><th style="color:var(--accent-finance)">Finance</th><th style="color:var(--accent-lease)">Lease Only</th><th style="color:var(--accent-buyout)">Lease+Fin. Buyout</th><th style="color:var(--accent-cash)">Lease+Cash Buyout</th></tr></thead>
             <tbody>
-              <tr><td class="metric-label">Monthly Payment</td><td id="cmpFinMonthly">—</td><td id="cmpLeaseMonthly">—</td><td id="cmpBuyoutMonthly">—</td></tr>
-              <tr><td class="metric-label">Total Cost</td><td id="cmpFinTotal">—</td><td id="cmpLeaseTotal">—</td><td id="cmpBuyoutTotal">—</td></tr>
-              <tr><td class="metric-label">Total Interest / Charges</td><td id="cmpFinInterest">—</td><td id="cmpLeaseInterest">—</td><td id="cmpBuyoutInterest">—</td></tr>
-              <tr><td class="metric-label">Total Tax Paid</td><td id="cmpFinTax">—</td><td id="cmpLeaseTax">—</td><td id="cmpBuyoutTax">—</td></tr>
-              <tr><td class="metric-label">Ownership at End</td><td style="color:var(--accent-finance);font-weight:700">✓ Yes</td><td style="color:var(--text-3)">✗ No</td><td style="color:var(--accent-buyout);font-weight:700">✓ Yes</td></tr>
-              <tr><td class="metric-label">Total Months</td><td id="cmpFinTermTotal">—</td><td id="cmpLeaseTermTotal">—</td><td id="cmpBuyoutTermTotal">—</td></tr>
+              <tr><td class="metric-label">Monthly Payment</td><td id="cmpFinMonthly">—</td><td id="cmpLeaseMonthly">—</td><td id="cmpBuyoutMonthly">—</td><td id="cmpCashMonthly">—</td></tr>
+              <tr><td class="metric-label">Total Cost</td><td id="cmpFinTotal">—</td><td id="cmpLeaseTotal">—</td><td id="cmpBuyoutTotal">—</td><td id="cmpCashTotal">—</td></tr>
+              <tr><td class="metric-label">Total Interest / Charges</td><td id="cmpFinInterest">—</td><td id="cmpLeaseInterest">—</td><td id="cmpBuyoutInterest">—</td><td id="cmpCashInterest">—</td></tr>
+              <tr><td class="metric-label">Total Tax Paid</td><td id="cmpFinTax">—</td><td id="cmpLeaseTax">—</td><td id="cmpBuyoutTax">—</td><td id="cmpCashTaxCol">—</td></tr>
+              <tr><td class="metric-label">Ownership at End</td><td style="color:var(--accent-finance);font-weight:700">✓ Yes</td><td style="color:var(--text-3)">✗ No</td><td style="color:var(--accent-buyout);font-weight:700">✓ Yes</td><td style="color:var(--accent-cash);font-weight:700">✓ Yes</td></tr>
+              <tr><td class="metric-label">Total Months</td><td id="cmpFinTermTotal">—</td><td id="cmpLeaseTermTotal">—</td><td id="cmpBuyoutTermTotal">—</td><td id="cmpCashTermTotal">—</td></tr>
             </tbody>
           </table>
         </div>
@@ -707,6 +774,7 @@ body::before {
 
 <script>
 let residualMode = 'pct';
+let buyoutMode = 'finance'; // 'finance' or 'cash'
 let balanceChart, breakdownChart, comparisonChart, costStackChart;
 
 const $ = id => document.getElementById(id);
@@ -732,6 +800,14 @@ function setResMode(mode) {
   calc();
 }
 
+function setBuyoutMode(mode) {
+  buyoutMode = mode;
+  $('buyoutFinBtn').className = mode === 'finance' ? 'active' : '';
+  $('buyoutCashBtn').className = mode === 'cash' ? 'active' : '';
+  $('buyoutFinFields').style.display = mode === 'finance' ? 'block' : 'none';
+  calc();
+}
+
 function toggleTheme() {
   const html = document.documentElement;
   const isLight = html.getAttribute('data-theme') === 'light';
@@ -750,6 +826,7 @@ function getChartColors() {
     border: s.getPropertyValue('--border').trim(),
     warn: s.getPropertyValue('--accent-warn').trim(),
     gold: s.getPropertyValue('--accent-gold').trim(),
+    cash: s.getPropertyValue('--accent-cash').trim(),
   };
 }
 
@@ -831,6 +908,7 @@ function calc() {
   const fTerm = num('finTerm'), fRate = num('finRate');
   const lTerm = num('leaseTerm'), lRate = num('leaseRate');
   const resVal = num('residualVal'), fees = num('leaseFees');
+  const leaseDown = num('leaseDown');
   const bTerm = num('buyoutTerm'), bRate = num('buyoutRate');
 
   $('netPrice').textContent = fmt(Math.max(0, price - down - trade));
@@ -851,7 +929,7 @@ function calc() {
 
   // Calculate all three scenarios
   const fin = calculateFinance(price, down, trade, gst, pst, fTerm, fRate);
-  const lease = calculateLease(price, down, trade, gst, pst, lTerm, lRate, resVal, residualMode, fees);
+  const lease = calculateLease(price, leaseDown, trade, gst, pst, lTerm, lRate, resVal, residualMode, fees);
   const buyout = calculateBuyout(lease.residual, gst, pst, bTerm, bRate);
   const finSchedule = generateAmortizationSchedule(fin.loanAmount, fTerm, fRate);
   const buyoutSchedule = generateAmortizationSchedule(buyout.loanAmount, bTerm, bRate);
@@ -861,7 +939,7 @@ function calc() {
 
   // ===== TOTAL COST SUMMARY =====
   const finTotalOwn = fin.totalPaid + down + trade;
-  const leaseBuyoutTotalOwn = lease.totalLeasePayments + lease.leaseTax + down + buyout.totalPaid;
+  const leaseBuyoutTotalOwn = lease.totalLeasePayments + lease.leaseTax + leaseDown + buyout.totalPaid;
   const diff = leaseBuyoutTotalOwn - finTotalOwn;
   const diffPct = finTotalOwn > 0 ? (Math.abs(diff) / Math.min(finTotalOwn, leaseBuyoutTotalOwn) * 100) : 0;
 
@@ -915,10 +993,47 @@ function calc() {
   $('slBuyoutMonthly').textContent = fmt(buyout.monthlyPayment);
   $('slBuyoutPayments').textContent = fmt(buyout.totalPaid);
   $('slBuyoutInterest').textContent = fmt(buyout.totalInterest);
-  $('slDown').textContent = fmt(down);
+  $('slDown').textContent = fmt(leaseDown);
   $('slTotalInterest').textContent = fmt(totalInterestLB);
   $('slTotalTax').textContent = fmt(totalTaxLB);
   $('slTotal').textContent = fmt(leaseBuyoutTotalOwn);
+
+  // ===== CASH BUYOUT SCENARIO =====
+  const cashBuyoutAmount = buyout.loanAmount; // residual + tax, same amount but paid in cash
+  const cashTotalTax = lease.leaseTax + buyout.buyoutTax;
+  const cashTotalOwn = lease.totalLeasePayments + lease.leaseTax + leaseDown + cashBuyoutAmount;
+  const cashSavingsVsFin = cashTotalOwn - finTotalOwn;
+  const cashSavingsVsFinBuyout = leaseBuyoutTotalOwn - cashTotalOwn;
+
+  $('summCashTotal').textContent = fmt(cashTotalOwn);
+  $('summCashSub').textContent = lTerm + ' mo + cash';
+
+  // Highlight best of 3
+  const bestTotal = Math.min(finTotalOwn, leaseBuyoutTotalOwn, cashTotalOwn);
+  $('summFinCard').className = 'result-card' + (finTotalOwn === bestTotal ? ' finance-highlight' : '');
+  $('summBuyoutCard').className = 'result-card' + (leaseBuyoutTotalOwn === bestTotal && finTotalOwn !== bestTotal ? ' buyout-highlight' : '');
+  $('summCashCard').className = 'result-card' + (cashTotalOwn === bestTotal && finTotalOwn !== bestTotal && leaseBuyoutTotalOwn !== bestTotal ? ' cash-highlight' : '');
+
+  // Cash buyout breakdown
+  $('scPhase1Term').textContent = lTerm + ' mo';
+  $('scLeaseDown').textContent = fmt(leaseDown);
+  $('scLeaseMonthly').textContent = fmt(lease.monthlyPayment);
+  $('scLeaseTotal').textContent = fmt(lease.totalLeasePayments);
+  $('scLeaseCharges').textContent = fmt(lease.totalFinanceCharges);
+  $('scLeaseTax').textContent = fmt(lease.leaseTax);
+  $('scResidual').textContent = fmt(lease.residual);
+  $('scBuyoutTax').textContent = fmt(buyout.buyoutTax);
+  $('scCashPaid').textContent = fmt(cashBuyoutAmount);
+  $('scTotalInterest').textContent = fmt(lease.totalFinanceCharges);
+  $('scTotalTax').textContent = fmt(cashTotalTax);
+  $('scTotal').textContent = fmt(cashTotalOwn);
+
+  // Cash savings callout
+  $('cashSavings').textContent = fmt(cashSavingsVsFinBuyout);
+  $('cashDiffDetail').innerHTML = `Paying cash for the buyout saves <strong>${fmt(cashSavingsVsFinBuyout)}</strong> vs financing it (you avoid <strong>${fmt(buyout.totalInterest)}</strong> in buyout loan interest). ` +
+    (cashSavingsVsFin < 0
+      ? `Cash buyout is also <strong>${fmt(Math.abs(cashSavingsVsFin))}</strong> cheaper than direct financing.`
+      : `However, direct financing is still <strong>${fmt(cashSavingsVsFin)}</strong> cheaper overall due to double taxation on the residual.`);
 
   $('diffInterest').textContent = (extraInterest >= 0 ? '+' : '') + fmt(extraInterest);
   $('diffTax').textContent = (extraTax >= 0 ? '+' : '') + fmt(extraTax);
@@ -944,6 +1059,11 @@ function calc() {
   $('cmpFinTermTotal').textContent = fTerm + ' mo';
   $('cmpLeaseTermTotal').textContent = lTerm + ' mo';
   $('cmpBuyoutTermTotal').textContent = (lTerm + bTerm) + ' mo';
+  $('cmpCashMonthly').textContent = fmt(lease.monthlyPayment) + ' → lump';
+  $('cmpCashTotal').textContent = fmt(cashTotalOwn);
+  $('cmpCashInterest').textContent = fmt(lease.totalFinanceCharges);
+  $('cmpCashTaxCol').textContent = fmt(cashTotalTax);
+  $('cmpCashTermTotal').textContent = lTerm + ' mo + cash';
 
   const finCheaper = fin.monthlyPayment <= lease.monthlyPayment;
   $('finMonthlyCard').className = 'result-card' + (finCheaper ? ' finance-highlight' : '');
@@ -973,10 +1093,10 @@ function calc() {
   });
   $('leaseBuyoutBody').innerHTML = lbRows;
 
-  renderCharts(finSchedule, fin, lease, buyout, finTotalOwn, leaseBuyoutTotalOwn, totalInterestFin, totalInterestLB, totalTaxFin, totalTaxLB);
+  renderCharts(finSchedule, fin, lease, buyout, finTotalOwn, leaseBuyoutTotalOwn, cashTotalOwn, totalInterestFin, totalInterestLB, totalTaxFin, totalTaxLB, cashTotalTax, leaseDown);
 }
 
-function renderCharts(schedule, fin, lease, buyout, finTotalOwn, lbTotalOwn, finInt, lbInt, finTaxAmt, lbTaxAmt) {
+function renderCharts(schedule, fin, lease, buyout, finTotalOwn, lbTotalOwn, cashTotalOwn, finInt, lbInt, finTaxAmt, lbTaxAmt, cashTaxAmt, leaseDown) {
   const c = getChartColors();
   const cf = { family: "'DM Sans', sans-serif", size: 11, weight: '500' };
 
@@ -1027,7 +1147,8 @@ function renderCharts(schedule, fin, lease, buyout, finTotalOwn, lbTotalOwn, fin
       datasets: [
         { label: 'Finance', data: [fin.monthlyPayment, finTotalOwn, finInt, finTaxAmt], backgroundColor: c.finance+'cc', borderRadius: 6, barPercentage: 0.5 },
         { label: 'Lease Only', data: [lease.monthlyPayment, lease.totalCost, lease.totalFinanceCharges, lease.leaseTax], backgroundColor: c.lease+'cc', borderRadius: 6, barPercentage: 0.5 },
-        { label: 'Lease+Buyout', data: [lease.monthlyPayment, lbTotalOwn, lbInt, lbTaxAmt], backgroundColor: c.buyout+'cc', borderRadius: 6, barPercentage: 0.5 },
+        { label: 'Lease+Fin. Buyout', data: [lease.monthlyPayment, lbTotalOwn, lbInt, lbTaxAmt], backgroundColor: c.buyout+'cc', borderRadius: 6, barPercentage: 0.5 },
+        { label: 'Lease+Cash Buyout', data: [lease.monthlyPayment, cashTotalOwn, lease.totalFinanceCharges, cashTaxAmt], backgroundColor: c.cash+'cc', borderRadius: 6, barPercentage: 0.5 },
       ]
     },
     options: {
@@ -1046,12 +1167,12 @@ function renderCharts(schedule, fin, lease, buyout, finTotalOwn, lbTotalOwn, fin
   costStackChart = new Chart($('costStackCanvas'), {
     type: 'bar',
     data: {
-      labels: ['Finance (Direct)', 'Lease + Buyout'],
+      labels: ['Finance (Direct)', 'Lease + Fin. Buyout', 'Lease + Cash Buyout'],
       datasets: [
-        { label: 'Down Payment', data: [num('downPayment'), num('downPayment')], backgroundColor: '#888780' },
-        { label: 'Principal / Depreciation', data: [fin.loanAmount, lease.totalLeasePayments - lease.totalFinanceCharges + buyout.loanAmount - buyout.totalInterest], backgroundColor: c.finance },
-        { label: 'Interest / Charges', data: [finInt, lbInt], backgroundColor: c.lease },
-        { label: 'Tax', data: [finTaxAmt, lbTaxAmt], backgroundColor: c.warn }
+        { label: 'Down Payment', data: [num('downPayment'), leaseDown, leaseDown], backgroundColor: '#888780' },
+        { label: 'Principal / Depreciation', data: [fin.loanAmount, lease.totalLeasePayments - lease.totalFinanceCharges + buyout.loanAmount - buyout.totalInterest, lease.totalLeasePayments - lease.totalFinanceCharges + buyout.loanAmount], backgroundColor: c.finance },
+        { label: 'Interest / Charges', data: [finInt, lbInt, lease.totalFinanceCharges], backgroundColor: c.lease },
+        { label: 'Tax', data: [finTaxAmt, lbTaxAmt, cashTaxAmt], backgroundColor: c.warn }
       ]
     },
     options: {
