@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Car Mortgage Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0c0f14;
+  --surface: #151921;
+  --surface-2: #1c2230;
+  --surface-3: #242b3a;
+  --border: #2a3246;
+  --border-active: #4a5775;
+  --text: #e8ecf4;
+  --text-2: #9aa3b8;
+  --text-3: #6b7590;
+  --accent-finance: #22c997;
+  --accent-finance-dim: rgba(34,201,151,0.12);
+  --accent-finance-glow: rgba(34,201,151,0.25);
+  --accent-lease: #6c8cff;
+  --accent-lease-dim: rgba(108,140,255,0.12);
+  --accent-lease-glow: rgba(108,140,255,0.25);
+  --accent-buyout: #c084fc;
+  --accent-buyout-dim: rgba(192,132,252,0.12);
+  --accent-warn: #ff6b6b;
+  --accent-gold: #f0c040;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.35);
+  --font: 'DM Sans', sans-serif;
+  --mono: 'Space Mono', monospace;
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="light"] {
+  --bg: #f0f2f7;
+  --surface: #ffffff;
+  --surface-2: #f5f7fb;
+  --surface-3: #eaecf3;
+  --border: #dce0ea;
+  --border-active: #b0b8cc;
+  --text: #1a1f2e;
+  --text-2: #5a6275;
+  --text-3: #8a92a5;
+  --accent-finance: #0fa77d;
+  --accent-finance-dim: rgba(15,167,125,0.08);
+  --accent-finance-glow: rgba(15,167,125,0.15);
+  --accent-lease: #4b6fe8;
+  --accent-lease-dim: rgba(75,111,232,0.08);
+  --accent-lease-glow: rgba(75,111,232,0.15);
+  --accent-buyout: #9333ea;
+  --accent-buyout-dim: rgba(147,51,234,0.08);
+  --shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100vh;
+  transition: background var(--transition), color var(--transition);
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.app { position: relative; z-index: 1; max-width: 1440px; margin: 0 auto; padding: 20px; }
+
+/* HEADER */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 0 32px; gap: 16px; flex-wrap: wrap;
+}
+.logo { display: flex; align-items: center; gap: 12px; }
+.logo-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent-finance), var(--accent-lease));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; box-shadow: 0 4px 16px rgba(34,201,151,0.3);
+}
+.logo-text { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+.logo-text span { color: var(--text-3); font-weight: 400; font-size: 14px; margin-left: 8px; }
+.header-actions { display: flex; gap: 8px; align-items: center; }
+
+.theme-toggle {
+  width: 42px; height: 42px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text-2); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; transition: all var(--transition);
+}
+.theme-toggle:hover { border-color: var(--border-active); color: var(--text); }
+
+.btn {
+  padding: 10px 18px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text-2); cursor: pointer;
+  font-family: var(--font); font-size: 13px; font-weight: 500;
+  transition: all var(--transition); display: inline-flex; align-items: center; gap: 6px;
+}
+.btn:hover { border-color: var(--border-active); color: var(--text); }
+
+/* GRID */
+.grid { display: grid; grid-template-columns: 380px 1fr; gap: 24px; }
+@media (max-width: 1100px) { .grid { grid-template-columns: 1fr; } }
+
+/* CARDS */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px;
+  transition: all var(--transition);
+}
+.card-title {
+  font-size: 13px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 1.2px; color: var(--text-3); margin-bottom: 20px;
+  display: flex; align-items: center; gap: 8px;
+}
+.card-title .dot { width: 8px; height: 8px; border-radius: 50%; }
+.dot-finance { background: var(--accent-finance); }
+.dot-lease { background: var(--accent-lease); }
+.dot-buyout { background: var(--accent-buyout); }
+.dot-gold { background: var(--accent-gold); }
+
+/* FORMS */
+.form-group { margin-bottom: 16px; }
+.form-group label {
+  display: block; font-size: 12px; font-weight: 500;
+  color: var(--text-2); margin-bottom: 6px; letter-spacing: 0.3px;
+}
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.input-wrap {
+  position: relative; display: flex; align-items: center;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); transition: all var(--transition);
+  overflow: hidden;
+}
+.input-wrap:focus-within { border-color: var(--border-active); background: var(--surface-3); }
+.input-prefix, .input-suffix {
+  padding: 0 10px; font-size: 13px; color: var(--text-3);
+  font-family: var(--mono); flex-shrink: 0; user-select: none;
+}
+.input-wrap input {
+  width: 100%; padding: 11px 12px; border: none; background: transparent;
+  color: var(--text); font-family: var(--mono); font-size: 14px; outline: none;
+}
+.input-wrap input::placeholder { color: var(--text-3); }
+.input-wrap input::-webkit-outer-spin-button,
+.input-wrap input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.input-wrap input[type=number] { -moz-appearance: textfield; }
+
+.computed-value {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 11px 14px;
+  font-family: var(--mono); font-size: 14px; color: var(--accent-finance);
+  font-weight: 600;
+}
+
+.divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+/* TOGGLE */
+.toggle-group {
+  display: flex; background: var(--surface-2); border-radius: var(--radius-sm);
+  border: 1px solid var(--border); overflow: hidden;
+}
+.toggle-group button {
+  flex: 1; padding: 9px 14px; border: none; background: transparent;
+  color: var(--text-3); font-family: var(--font); font-size: 13px;
+  font-weight: 500; cursor: pointer; transition: all var(--transition);
+}
+.toggle-group button.active { background: var(--accent-finance); color: #fff; }
+.toggle-group button.active-lease { background: var(--accent-lease); color: #fff; }
+
+/* RESULTS */
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.compare-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+.result-card {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 18px; position: relative;
+  overflow: hidden;
+}
+.result-card.finance-highlight { border-color: var(--accent-finance); }
+.result-card.finance-highlight::before {
+  content: ''; position: absolute; inset: 0;
+  background: var(--accent-finance-dim); pointer-events: none;
+}
+.result-card.lease-highlight { border-color: var(--accent-lease); }
+.result-card.lease-highlight::before {
+  content: ''; position: absolute; inset: 0;
+  background: var(--accent-lease-dim); pointer-events: none;
+}
+.result-card.buyout-highlight { border-color: var(--accent-buyout); }
+.result-card.buyout-highlight::before {
+  content: ''; position: absolute; inset: 0;
+  background: var(--accent-buyout-dim); pointer-events: none;
+}
+
+.result-label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--text-3); margin-bottom: 6px;
+}
+.result-value {
+  font-family: var(--mono); font-size: 26px; font-weight: 700;
+  position: relative; z-index: 1;
+}
+.result-sub {
+  font-size: 12px; color: var(--text-3); margin-top: 4px;
+  font-family: var(--mono); position: relative; z-index: 1;
+}
+.finance-color { color: var(--accent-finance); }
+.lease-color { color: var(--accent-lease); }
+.buyout-color { color: var(--accent-buyout); }
+
+.winner-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 20px; font-size: 11px;
+  font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
+  position: relative; z-index: 1;
+}
+.winner-finance { background: var(--accent-finance-dim); color: var(--accent-finance); }
+.winner-lease { background: var(--accent-lease-dim); color: var(--accent-lease); }
+
+/* COMPARE TABLE */
+.compare-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+.compare-table th {
+  text-align: left; padding: 10px 14px; font-size: 11px;
+  text-transform: uppercase; letter-spacing: 1px; color: var(--text-3);
+  font-weight: 600; border-bottom: 1px solid var(--border);
+}
+.compare-table td {
+  padding: 12px 14px; border-bottom: 1px solid var(--border);
+  font-family: var(--mono); font-size: 13px;
+}
+.compare-table tr:last-child td { border-bottom: none; }
+.compare-table .metric-label { font-family: var(--font); color: var(--text-2); font-weight: 500; }
+.compare-table .cheaper { font-weight: 700; }
+
+/* COST SUMMARY SECTION */
+.summary-section {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px; margin-top: 20px;
+}
+.summary-col { display: flex; flex-direction: column; gap: 10px; }
+.summary-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 7px 0; font-size: 13px;
+}
+.summary-row.indent { padding-left: 18px; }
+.summary-row .k { color: var(--text-2); }
+.summary-row .v { font-family: var(--mono); font-weight: 600; font-size: 13px; }
+.summary-row.total {
+  border-top: 2px solid var(--border); padding-top: 12px; margin-top: 4px;
+}
+.summary-row.total .k { color: var(--text); font-weight: 600; font-size: 14px; }
+.summary-row.total .v { font-size: 16px; }
+.summary-divider { height: 1px; background: var(--border); margin: 6px 0; }
+.tag-pill {
+  display: inline-block; font-size: 10px; padding: 3px 8px; border-radius: 20px;
+  font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; margin-left: 6px;
+}
+.tag-own { background: var(--accent-finance-dim); color: var(--accent-finance); }
+.tag-lease-own { background: var(--accent-buyout-dim); color: var(--accent-buyout); }
+
+/* DIFFERENCE CALLOUT */
+.diff-callout {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 16px; margin-top: 16px;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+}
+.diff-callout .diff-amount {
+  font-family: var(--mono); font-size: 28px; font-weight: 700;
+}
+.diff-callout .diff-detail {
+  font-size: 13px; color: var(--text-2); line-height: 1.6; flex: 1; min-width: 200px;
+}
+.diff-callout .diff-detail strong { color: var(--text); }
+
+/* AMORTIZATION */
+.amort-container { max-height: 500px; overflow-y: auto; border-radius: var(--radius-sm); }
+.amort-container::-webkit-scrollbar { width: 6px; }
+.amort-container::-webkit-scrollbar-track { background: var(--surface-2); }
+.amort-container::-webkit-scrollbar-thumb { background: var(--border-active); border-radius: 3px; }
+
+.amort-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.amort-table thead { position: sticky; top: 0; z-index: 2; }
+.amort-table th {
+  background: var(--surface-3); padding: 10px 12px; text-align: right;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px;
+  color: var(--text-3); font-weight: 600; border-bottom: 2px solid var(--border);
+}
+.amort-table th:first-child { text-align: center; }
+.amort-table td {
+  padding: 9px 12px; text-align: right; font-family: var(--mono);
+  font-size: 12px; color: var(--text-2); border-bottom: 1px solid var(--border);
+}
+.amort-table td:first-child { text-align: center; color: var(--text-3); }
+.amort-table tbody tr:hover { background: var(--surface-2); }
+.amort-table .phase-row td {
+  background: var(--surface-3); font-family: var(--font); font-weight: 600;
+  color: var(--text-3); text-align: left; font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.8px;
+}
+
+/* CHARTS */
+.chart-wrap {
+  position: relative; height: 280px;
+  background: var(--surface-2); border-radius: var(--radius-sm);
+  padding: 16px; border: 1px solid var(--border);
+}
+
+.tabs {
+  display: flex; gap: 4px; margin-bottom: 16px;
+  background: var(--surface-2); border-radius: var(--radius-sm);
+  padding: 4px; border: 1px solid var(--border);
+}
+.tab {
+  padding: 8px 16px; border: none; border-radius: 6px;
+  background: transparent; color: var(--text-3);
+  font-family: var(--font); font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all var(--transition); flex: 1; text-align: center;
+}
+.tab.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+
+/* WARNINGS */
+.warning {
+  background: rgba(255,107,107,0.08); border: 1px solid rgba(255,107,107,0.25);
+  border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 16px;
+  font-size: 12px; color: var(--accent-warn); display: none; align-items: center; gap: 8px;
+}
+.warning.show { display: flex; }
+
+.section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; flex-wrap: wrap; gap: 8px;
+}
+
+/* ANIMATION */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate { animation: fadeInUp 0.5s ease both; }
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .app { padding: 12px; }
+  .header { padding: 12px 0 20px; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .compare-grid-3 { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+  .result-value { font-size: 22px; }
+  .card, .summary-section { padding: 18px; }
+  .diff-callout { flex-direction: column; align-items: flex-start; }
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-active); }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- CREDIT -->
+  <div style="text-align:center;padding:10px 0 4px;font-size:12px;font-weight:500;color:var(--text-3);letter-spacing:0.5px;font-family:var(--mono);">Produced by D. Chan in 2026</div>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">🚗</div>
+      <div class="logo-text">Advanced Car Mortgage Calculator</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn" onclick="exportCSV()" title="Export Amortization">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </button>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- LEFT: INPUTS -->
+    <div class="inputs-panel">
+      <!-- Vehicle & Pricing -->
+      <div class="card animate" style="animation-delay:0.05s">
+        <div class="card-title"><span class="dot dot-gold"></span> Vehicle & Pricing</div>
+        <div class="form-group">
+          <label>Vehicle Price (MSRP / Negotiated)</label>
+          <div class="input-wrap">
+            <span class="input-prefix">$</span>
+            <input type="number" id="vehiclePrice" value="45000" min="0" step="500" oninput="calc()">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Down Payment</label>
+            <div class="input-wrap">
+              <span class="input-prefix">$</span>
+              <input type="number" id="downPayment" value="5000" min="0" step="500" oninput="calc()">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Trade-in Value</label>
+            <div class="input-wrap">
+              <span class="input-prefix">$</span>
+              <input type="number" id="tradeIn" value="0" min="0" step="500" oninput="calc()">
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Net Vehicle Price</label>
+          <div class="computed-value" id="netPrice">$40,000.00</div>
+        </div>
+        <div class="divider"></div>
+        <div class="card-title" style="margin-bottom:14px"><span class="dot dot-gold"></span> Tax Settings (BC Default)</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>GST (%)</label>
+            <div class="input-wrap">
+              <input type="number" id="gst" value="5" min="0" max="30" step="0.5" oninput="calc()">
+              <span class="input-suffix">%</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>PST (%)</label>
+            <div class="input-wrap">
+              <input type="number" id="pst" value="7" min="0" max="30" step="0.5" oninput="calc()">
+              <span class="input-suffix">%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Finance Section -->
+      <div class="card animate" style="margin-top:20px;animation-delay:0.15s">
+        <div class="card-title"><span class="dot dot-finance"></span> Finance (Loan)</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Loan Term</label>
+            <div class="input-wrap">
+              <input type="number" id="finTerm" value="60" min="1" max="120" oninput="calc()">
+              <span class="input-suffix">mo</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Interest Rate (APR)</label>
+            <div class="input-wrap">
+              <input type="number" id="finRate" value="5.49" min="0" max="30" step="0.01" oninput="calc()">
+              <span class="input-suffix">%</span>
+            </div>
+          </div>
+        </div>
+        <div id="warnFinance" class="warning">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span id="warnFinanceMsg"></span>
+        </div>
+      </div>
+
+      <!-- Lease Section -->
+      <div class="card animate" style="margin-top:20px;animation-delay:0.25s">
+        <div class="card-title"><span class="dot dot-lease"></span> Lease</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Lease Term</label>
+            <div class="input-wrap">
+              <input type="number" id="leaseTerm" value="36" min="1" max="84" oninput="calc()">
+              <span class="input-suffix">mo</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Interest Rate (APR)</label>
+            <div class="input-wrap">
+              <input type="number" id="leaseRate" value="3.99" min="0" max="30" step="0.01" oninput="calc()">
+              <span class="input-suffix">%</span>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Residual Value</label>
+          <div class="form-row">
+            <div class="input-wrap">
+              <input type="number" id="residualVal" value="55" min="0" step="1" oninput="calc()">
+              <span class="input-suffix" id="residualSuffix">%</span>
+            </div>
+            <div class="toggle-group">
+              <button class="active-lease" id="resPercBtn" onclick="setResMode('pct')">%</button>
+              <button id="resDolBtn" onclick="setResMode('dollar')">$</button>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Documentation / Acquisition Fees</label>
+          <div class="input-wrap">
+            <span class="input-prefix">$</span>
+            <input type="number" id="leaseFees" value="0" min="0" step="50" oninput="calc()">
+          </div>
+        </div>
+        <div id="warnLease" class="warning">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span id="warnLeaseMsg"></span>
+        </div>
+      </div>
+
+      <!-- BUYOUT Section (NEW) -->
+      <div class="card animate" style="margin-top:20px;animation-delay:0.35s">
+        <div class="card-title"><span class="dot dot-buyout"></span> Lease Buyout Financing</div>
+        <p style="font-size:12px;color:var(--text-3);margin-bottom:16px;line-height:1.6;">
+          If you plan to buy the car at the end of the lease, configure the buyout loan terms below. The buyout price equals the residual value + tax.
+        </p>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Buyout Loan Term</label>
+            <div class="input-wrap">
+              <input type="number" id="buyoutTerm" value="24" min="1" max="84" oninput="calc()">
+              <span class="input-suffix">mo</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Buyout APR</label>
+            <div class="input-wrap">
+              <input type="number" id="buyoutRate" value="5.49" min="0" max="30" step="0.01" oninput="calc()">
+              <span class="input-suffix">%</span>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Buyout Loan Amount (auto-calculated)</label>
+          <div class="computed-value" id="buyoutAmount" style="color:var(--accent-buyout)">$0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: RESULTS -->
+    <div class="results-panel">
+
+      <!-- ====== TOTAL COST TO OWN SUMMARY (NEW) ====== -->
+      <div class="summary-section animate" style="animation-delay:0.08s;border-left:3px solid var(--accent-gold);">
+        <div class="card-title"><span class="dot dot-gold"></span> Total Cost to Own — Summary</div>
+
+        <div class="compare-grid" style="margin-bottom:20px;">
+          <div class="result-card" id="summFinCard">
+            <div class="result-label">Finance Direct</div>
+            <div class="result-value finance-color" id="summFinTotal">$0</div>
+            <div class="result-sub" id="summFinSub">60 months</div>
+          </div>
+          <div class="result-card" id="summBuyoutCard">
+            <div class="result-label">Lease + Buyout</div>
+            <div class="result-value buyout-color" id="summBuyoutTotal">$0</div>
+            <div class="result-sub" id="summBuyoutSub">36 + 24 months</div>
+          </div>
+        </div>
+
+        <div class="diff-callout" id="diffCallout">
+          <div>
+            <div class="result-label">Difference</div>
+            <div class="diff-amount finance-color" id="diffAmount">$0</div>
+          </div>
+          <div class="diff-detail" id="diffDetail"></div>
+        </div>
+
+        <!-- Finance breakdown -->
+        <div style="margin-top:24px;">
+          <div class="card-title" style="margin-bottom:10px"><span class="dot dot-finance"></span> Finance Path Breakdown</div>
+          <div class="summary-col">
+            <div class="summary-row"><span class="k">Vehicle price</span><span class="v" id="sfPrice">—</span></div>
+            <div class="summary-row"><span class="k">Tax (GST + PST)</span><span class="v" id="sfTax">—</span></div>
+            <div class="summary-row"><span class="k">Down payment</span><span class="v" id="sfDown">—</span></div>
+            <div class="summary-row"><span class="k">Trade-in</span><span class="v" id="sfTrade">—</span></div>
+            <div class="summary-divider"></div>
+            <div class="summary-row"><span class="k">Loan principal</span><span class="v finance-color" id="sfPrincipal">—</span></div>
+            <div class="summary-row"><span class="k">Total interest paid</span><span class="v" id="sfInterest">—</span></div>
+            <div class="summary-row"><span class="k">Monthly payment</span><span class="v" id="sfMonthly">—</span></div>
+            <div class="summary-row total"><span class="k">Total cost to own <span class="tag-pill tag-own">You own it</span></span><span class="v finance-color" id="sfTotal">—</span></div>
+          </div>
+        </div>
+
+        <!-- Lease+Buyout breakdown -->
+        <div style="margin-top:24px;">
+          <div class="card-title" style="margin-bottom:10px"><span class="dot dot-buyout"></span> Lease + Buyout Path Breakdown</div>
+          <div class="summary-col">
+            <div class="summary-row" style="color:var(--text);font-weight:600;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;padding-bottom:2px;">
+              <span>Phase 1: Lease</span><span id="slPhase1Term">36 mo</span>
+            </div>
+            <div class="summary-row indent"><span class="k">Net cap cost</span><span class="v" id="slNetCap">—</span></div>
+            <div class="summary-row indent"><span class="k">Monthly lease payment</span><span class="v" id="slLeaseMonthly">—</span></div>
+            <div class="summary-row indent"><span class="k">Total lease payments</span><span class="v" id="slLeaseTotal">—</span></div>
+            <div class="summary-row indent"><span class="k">Lease finance charges</span><span class="v" id="slLeaseCharges">—</span></div>
+            <div class="summary-row indent"><span class="k">Lease-end tax (on residual)</span><span class="v" id="slLeaseTax">—</span></div>
+            <div class="summary-divider"></div>
+            <div class="summary-row" style="color:var(--text);font-weight:600;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;padding-bottom:2px;">
+              <span>Phase 2: Buyout</span><span id="slPhase2Term">24 mo</span>
+            </div>
+            <div class="summary-row indent"><span class="k">Buyout price (residual)</span><span class="v" id="slResidual">—</span></div>
+            <div class="summary-row indent"><span class="k">Tax on buyout (GST + PST)</span><span class="v" id="slBuyoutTax">—</span></div>
+            <div class="summary-row indent"><span class="k">Buyout loan amount</span><span class="v" id="slBuyoutLoan">—</span></div>
+            <div class="summary-row indent"><span class="k">Monthly buyout payment</span><span class="v" id="slBuyoutMonthly">—</span></div>
+            <div class="summary-row indent"><span class="k">Total buyout payments</span><span class="v" id="slBuyoutPayments">—</span></div>
+            <div class="summary-row indent"><span class="k">Buyout interest paid</span><span class="v" id="slBuyoutInterest">—</span></div>
+            <div class="summary-divider"></div>
+            <div class="summary-row"><span class="k">Down payment</span><span class="v" id="slDown">—</span></div>
+            <div class="summary-row"><span class="k">Total interest + charges</span><span class="v" id="slTotalInterest">—</span></div>
+            <div class="summary-row"><span class="k">Total tax paid</span><span class="v" id="slTotalTax">—</span></div>
+            <div class="summary-row total"><span class="k">Total cost to own <span class="tag-pill tag-lease-own">Lease → Own</span></span><span class="v buyout-color" id="slTotal">—</span></div>
+          </div>
+        </div>
+
+        <!-- Where the money goes chart -->
+        <div style="margin-top:24px;">
+          <div class="card-title" style="margin-bottom:10px"><span class="dot dot-gold"></span> Where the Extra Cost Goes</div>
+          <div class="compare-grid">
+            <div class="result-card">
+              <div class="result-label">Extra Interest / Charges</div>
+              <div class="result-value" style="font-size:20px;color:var(--accent-warn)" id="diffInterest">$0</div>
+            </div>
+            <div class="result-card">
+              <div class="result-label">Extra Tax (Double-Taxed)</div>
+              <div class="result-value" style="font-size:20px;color:var(--accent-warn)" id="diffTax">$0</div>
+            </div>
+          </div>
+          <div class="chart-wrap" style="margin-top:14px;height:240px"><canvas id="costStackCanvas"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Comparison Dashboard (original) -->
+      <div class="card animate" style="margin-top:20px;animation-delay:0.15s">
+        <div class="section-head">
+          <div class="card-title" style="margin-bottom:0"><span class="dot dot-gold"></span> Monthly Comparison — Finance vs Lease Only</div>
+          <div id="winnerBadge" class="winner-badge winner-finance">✓ Finance Saves</div>
+        </div>
+        <div class="compare-grid">
+          <div class="result-card" id="finMonthlyCard">
+            <div class="result-label">Finance — Monthly</div>
+            <div class="result-value finance-color" id="finMonthly">$0</div>
+            <div class="result-sub" id="finTermLabel">60 months</div>
+          </div>
+          <div class="result-card" id="leaseMonthlyCard">
+            <div class="result-label">Lease — Monthly</div>
+            <div class="result-value lease-color" id="leaseMonthly">$0</div>
+            <div class="result-sub" id="leaseTermLabel">36 months</div>
+          </div>
+        </div>
+        <div style="margin-top:16px;overflow-x:auto;">
+          <table class="compare-table">
+            <thead><tr><th>Metric</th><th style="color:var(--accent-finance)">Finance</th><th style="color:var(--accent-lease)">Lease Only</th><th style="color:var(--accent-buyout)">Lease+Buyout</th></tr></thead>
+            <tbody>
+              <tr><td class="metric-label">Monthly Payment</td><td id="cmpFinMonthly">—</td><td id="cmpLeaseMonthly">—</td><td id="cmpBuyoutMonthly">—</td></tr>
+              <tr><td class="metric-label">Total Cost</td><td id="cmpFinTotal">—</td><td id="cmpLeaseTotal">—</td><td id="cmpBuyoutTotal">—</td></tr>
+              <tr><td class="metric-label">Total Interest / Charges</td><td id="cmpFinInterest">—</td><td id="cmpLeaseInterest">—</td><td id="cmpBuyoutInterest">—</td></tr>
+              <tr><td class="metric-label">Total Tax Paid</td><td id="cmpFinTax">—</td><td id="cmpLeaseTax">—</td><td id="cmpBuyoutTax">—</td></tr>
+              <tr><td class="metric-label">Ownership at End</td><td style="color:var(--accent-finance);font-weight:700">✓ Yes</td><td style="color:var(--text-3)">✗ No</td><td style="color:var(--accent-buyout);font-weight:700">✓ Yes</td></tr>
+              <tr><td class="metric-label">Total Months</td><td id="cmpFinTermTotal">—</td><td id="cmpLeaseTermTotal">—</td><td id="cmpBuyoutTermTotal">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="card animate" style="margin-top:20px;animation-delay:0.25s">
+        <div class="tabs">
+          <button class="tab active" data-tab="balanceChart" onclick="switchTab(this)">Loan Balance</button>
+          <button class="tab" data-tab="breakdownChart" onclick="switchTab(this)">Cost Breakdown</button>
+          <button class="tab" data-tab="comparisonBar" onclick="switchTab(this)">Side-by-Side</button>
+        </div>
+        <div class="chart-wrap" id="balanceChart"><canvas id="balanceCanvas"></canvas></div>
+        <div class="chart-wrap" id="breakdownChart" style="display:none"><canvas id="breakdownCanvas"></canvas></div>
+        <div class="chart-wrap" id="comparisonBar" style="display:none"><canvas id="comparisonCanvas"></canvas></div>
+      </div>
+
+      <!-- Finance Amortization Schedule -->
+      <div class="card animate" style="margin-top:20px;animation-delay:0.3s">
+        <div class="section-head">
+          <div class="card-title" style="margin-bottom:0"><span class="dot dot-finance"></span> Finance Amortization Schedule</div>
+        </div>
+        <div class="amort-container">
+          <table class="amort-table">
+            <thead><tr><th>Month</th><th>Payment</th><th>Interest</th><th>Principal</th><th>Balance</th></tr></thead>
+            <tbody id="amortBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Lease + Buyout Combined Schedule -->
+      <div class="card animate" style="margin-top:20px;animation-delay:0.35s">
+        <div class="section-head">
+          <div class="card-title" style="margin-bottom:0"><span class="dot dot-buyout"></span> Lease + Buyout Combined Schedule</div>
+        </div>
+        <div class="amort-container">
+          <table class="amort-table">
+            <thead><tr><th>Month</th><th>Payment</th><th>Depreciation / Principal</th><th>Charge / Interest</th><th>Balance</th></tr></thead>
+            <tbody id="leaseBuyoutBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let residualMode = 'pct';
+let balanceChart, breakdownChart, comparisonChart, costStackChart;
+
+const $ = id => document.getElementById(id);
+const num = id => parseFloat($(id).value) || 0;
+const fmt = n => n.toLocaleString('en-CA', { style:'currency', currency:'CAD', minimumFractionDigits:2 });
+const fmtShort = n => {
+  if (Math.abs(n) >= 1e6) return (n<0?'-':'') + '$' + (Math.abs(n)/1e6).toFixed(1) + 'M';
+  if (Math.abs(n) >= 1e3) return (n<0?'-':'') + '$' + (Math.abs(n)/1e3).toFixed(1) + 'K';
+  return fmt(n);
+};
+
+function setResMode(mode) {
+  residualMode = mode;
+  if (mode === 'pct') {
+    $('resPercBtn').classList.add('active-lease');
+    $('resDolBtn').classList.remove('active-lease');
+    $('residualSuffix').textContent = '%';
+  } else {
+    $('resDolBtn').classList.add('active-lease');
+    $('resPercBtn').classList.remove('active-lease');
+    $('residualSuffix').textContent = '$';
+  }
+  calc();
+}
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const isLight = html.getAttribute('data-theme') === 'light';
+  html.setAttribute('data-theme', isLight ? '' : 'light');
+  document.querySelector('.theme-toggle').textContent = isLight ? '🌙' : '☀️';
+  setTimeout(calc, 50);
+}
+
+function getChartColors() {
+  const s = getComputedStyle(document.documentElement);
+  return {
+    finance: s.getPropertyValue('--accent-finance').trim(),
+    lease: s.getPropertyValue('--accent-lease').trim(),
+    buyout: s.getPropertyValue('--accent-buyout').trim(),
+    text3: s.getPropertyValue('--text-3').trim(),
+    border: s.getPropertyValue('--border').trim(),
+    warn: s.getPropertyValue('--accent-warn').trim(),
+    gold: s.getPropertyValue('--accent-gold').trim(),
+  };
+}
+
+function calculateFinance(price, down, tradeIn, gstPct, pstPct, termMonths, aprPct) {
+  const taxRate = (gstPct + pstPct) / 100;
+  const totalTax = price * taxRate;
+  const loanAmount = price + totalTax - down - tradeIn;
+  const r = aprPct / 100 / 12;
+  let monthlyPayment = r === 0 ? loanAmount / termMonths : (r * loanAmount) / (1 - Math.pow(1 + r, -termMonths));
+  const totalPaid = monthlyPayment * termMonths;
+  const totalInterest = totalPaid - loanAmount;
+  return { loanAmount, monthlyPayment, totalPaid, totalInterest, totalTax };
+}
+
+function calculateLease(price, down, tradeIn, gstPct, pstPct, termMonths, aprPct, residualVal, resMode, fees) {
+  const residual = resMode === 'pct' ? (residualVal / 100) * price : residualVal;
+  const netCap = price - down - tradeIn + fees;
+  const depreciation = netCap - residual;
+  const monthlyDepreciation = depreciation / termMonths;
+  const r = aprPct / 100 / 12;
+  const financeCharge = (netCap + residual) * r;
+  const monthlyPayment = monthlyDepreciation + financeCharge;
+  const taxRate = (gstPct + pstPct) / 100;
+  const leaseTax = residual * taxRate;
+  const totalLeasePayments = monthlyPayment * termMonths;
+  const totalCost = totalLeasePayments + leaseTax + down + tradeIn;
+  const totalFinanceCharges = financeCharge * termMonths;
+  return { residual, monthlyPayment, monthlyDepreciation, financeCharge, totalLeasePayments, totalCost, totalFinanceCharges, leaseTax, netCap };
+}
+
+function calculateBuyout(residual, gstPct, pstPct, termMonths, aprPct) {
+  const taxRate = (gstPct + pstPct) / 100;
+  const buyoutTax = residual * taxRate;
+  const loanAmount = residual + buyoutTax;
+  const r = aprPct / 100 / 12;
+  let monthlyPayment = r === 0 ? loanAmount / termMonths : (r * loanAmount) / (1 - Math.pow(1 + r, -termMonths));
+  const totalPaid = monthlyPayment * termMonths;
+  const totalInterest = totalPaid - loanAmount;
+  return { loanAmount, monthlyPayment, totalPaid, totalInterest, buyoutTax };
+}
+
+function generateAmortizationSchedule(loanAmount, termMonths, aprPct) {
+  const schedule = [];
+  const r = aprPct / 100 / 12;
+  let balance = loanAmount;
+  let mp = r === 0 ? loanAmount / termMonths : (r * loanAmount) / (1 - Math.pow(1 + r, -termMonths));
+  for (let m = 1; m <= termMonths; m++) {
+    const interest = balance * r;
+    const principal = m === termMonths ? balance : mp - interest;
+    balance = Math.max(0, balance - principal);
+    schedule.push({ month: m, payment: mp, interest, principal, balance });
+  }
+  return schedule;
+}
+
+function switchTab(btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  ['balanceChart','breakdownChart','comparisonBar'].forEach(id => {
+    $(id).style.display = id === btn.dataset.tab ? 'block' : 'none';
+  });
+}
+
+function exportCSV() {
+  const fin = calculateFinance(num('vehiclePrice'), num('downPayment'), num('tradeIn'), num('gst'), num('pst'), num('finTerm'), num('finRate'));
+  const schedule = generateAmortizationSchedule(fin.loanAmount, num('finTerm'), num('finRate'));
+  let csv = 'Month,Payment,Interest,Principal,Balance\n';
+  schedule.forEach(r => csv += `${r.month},${r.payment.toFixed(2)},${r.interest.toFixed(2)},${r.principal.toFixed(2)},${r.balance.toFixed(2)}\n`);
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'amortization_schedule.csv';
+  a.click();
+}
+
+function calc() {
+  const price = num('vehiclePrice'), down = num('downPayment'), trade = num('tradeIn');
+  const gst = num('gst'), pst = num('pst');
+  const fTerm = num('finTerm'), fRate = num('finRate');
+  const lTerm = num('leaseTerm'), lRate = num('leaseRate');
+  const resVal = num('residualVal'), fees = num('leaseFees');
+  const bTerm = num('buyoutTerm'), bRate = num('buyoutRate');
+
+  $('netPrice').textContent = fmt(Math.max(0, price - down - trade));
+
+  // Warnings
+  let fWarn = '', lWarn = '';
+  if (fTerm <= 0) fWarn = 'Term must be > 0.';
+  if (fRate < 0) fWarn = 'Rate cannot be negative.';
+  if (lTerm <= 0) lWarn = 'Term must be > 0.';
+  if (lRate < 0) lWarn = 'Rate cannot be negative.';
+  const actualResidual = residualMode === 'pct' ? (resVal / 100) * price : resVal;
+  if (actualResidual >= price) lWarn = 'Residual must be < vehicle price.';
+  $('warnFinance').classList.toggle('show', !!fWarn);
+  $('warnFinanceMsg').textContent = fWarn;
+  $('warnLease').classList.toggle('show', !!lWarn);
+  $('warnLeaseMsg').textContent = lWarn;
+  if (fWarn || lWarn) return;
+
+  // Calculate all three scenarios
+  const fin = calculateFinance(price, down, trade, gst, pst, fTerm, fRate);
+  const lease = calculateLease(price, down, trade, gst, pst, lTerm, lRate, resVal, residualMode, fees);
+  const buyout = calculateBuyout(lease.residual, gst, pst, bTerm, bRate);
+  const finSchedule = generateAmortizationSchedule(fin.loanAmount, fTerm, fRate);
+  const buyoutSchedule = generateAmortizationSchedule(buyout.loanAmount, bTerm, bRate);
+
+  // Buyout computed field
+  $('buyoutAmount').textContent = fmt(buyout.loanAmount);
+
+  // ===== TOTAL COST SUMMARY =====
+  const finTotalOwn = fin.totalPaid + down + trade;
+  const leaseBuyoutTotalOwn = lease.totalLeasePayments + lease.leaseTax + down + buyout.totalPaid;
+  const diff = leaseBuyoutTotalOwn - finTotalOwn;
+  const diffPct = finTotalOwn > 0 ? (Math.abs(diff) / Math.min(finTotalOwn, leaseBuyoutTotalOwn) * 100) : 0;
+
+  $('summFinTotal').textContent = fmt(finTotalOwn);
+  $('summFinSub').textContent = fTerm + ' months';
+  $('summBuyoutTotal').textContent = fmt(leaseBuyoutTotalOwn);
+  $('summBuyoutSub').textContent = lTerm + ' + ' + bTerm + ' months';
+
+  // Highlight winner
+  const finWins = finTotalOwn <= leaseBuyoutTotalOwn;
+  $('summFinCard').className = 'result-card' + (finWins ? ' finance-highlight' : '');
+  $('summBuyoutCard').className = 'result-card' + (!finWins ? ' buyout-highlight' : '');
+
+  $('diffAmount').textContent = fmt(Math.abs(diff));
+  $('diffAmount').className = 'diff-amount ' + (finWins ? 'finance-color' : 'buyout-color');
+
+  const winnerName = finWins ? 'Financing directly' : 'Lease + Buyout';
+  const loserName = finWins ? 'lease + buyout' : 'direct financing';
+  const totalInterestFin = fin.totalInterest;
+  const totalInterestLB = lease.totalFinanceCharges + buyout.totalInterest;
+  const totalTaxFin = fin.totalTax;
+  const totalTaxLB = lease.leaseTax + buyout.buyoutTax;
+  const extraInterest = totalInterestLB - totalInterestFin;
+  const extraTax = totalTaxLB - totalTaxFin;
+
+  $('diffDetail').innerHTML = `<strong>${winnerName} saves ${fmt(Math.abs(diff))}</strong> (${diffPct.toFixed(1)}%) over ${loserName}.` +
+    (finWins ? ` The lease path pays <strong>${fmt(Math.abs(extraTax))}</strong> more in tax (residual taxed twice) and <strong>${fmt(Math.abs(extraInterest))}</strong> more in interest/charges across two financing periods.` :
+    ` Direct financing costs more in interest over the longer single-loan period.`);
+
+  // Finance breakdown
+  $('sfPrice').textContent = fmt(price);
+  $('sfTax').textContent = fmt(fin.totalTax);
+  $('sfDown').textContent = '−' + fmt(down);
+  $('sfTrade').textContent = trade > 0 ? '−' + fmt(trade) : fmt(0);
+  $('sfPrincipal').textContent = fmt(fin.loanAmount);
+  $('sfInterest').textContent = fmt(fin.totalInterest);
+  $('sfMonthly').textContent = fmt(fin.monthlyPayment);
+  $('sfTotal').textContent = fmt(finTotalOwn);
+
+  // Lease+Buyout breakdown
+  $('slPhase1Term').textContent = lTerm + ' mo';
+  $('slNetCap').textContent = fmt(lease.netCap);
+  $('slLeaseMonthly').textContent = fmt(lease.monthlyPayment);
+  $('slLeaseTotal').textContent = fmt(lease.totalLeasePayments);
+  $('slLeaseCharges').textContent = fmt(lease.totalFinanceCharges);
+  $('slLeaseTax').textContent = fmt(lease.leaseTax);
+  $('slPhase2Term').textContent = bTerm + ' mo';
+  $('slResidual').textContent = fmt(lease.residual);
+  $('slBuyoutTax').textContent = fmt(buyout.buyoutTax);
+  $('slBuyoutLoan').textContent = fmt(buyout.loanAmount);
+  $('slBuyoutMonthly').textContent = fmt(buyout.monthlyPayment);
+  $('slBuyoutPayments').textContent = fmt(buyout.totalPaid);
+  $('slBuyoutInterest').textContent = fmt(buyout.totalInterest);
+  $('slDown').textContent = fmt(down);
+  $('slTotalInterest').textContent = fmt(totalInterestLB);
+  $('slTotalTax').textContent = fmt(totalTaxLB);
+  $('slTotal').textContent = fmt(leaseBuyoutTotalOwn);
+
+  $('diffInterest').textContent = (extraInterest >= 0 ? '+' : '') + fmt(extraInterest);
+  $('diffTax').textContent = (extraTax >= 0 ? '+' : '') + fmt(extraTax);
+
+  // === ORIGINAL COMPARISON ===
+  $('finMonthly').textContent = fmt(fin.monthlyPayment);
+  $('leaseMonthly').textContent = fmt(lease.monthlyPayment);
+  $('finTermLabel').textContent = fTerm + ' months';
+  $('leaseTermLabel').textContent = lTerm + ' months';
+
+  $('cmpFinMonthly').textContent = fmt(fin.monthlyPayment);
+  $('cmpLeaseMonthly').textContent = fmt(lease.monthlyPayment);
+  $('cmpBuyoutMonthly').textContent = fmt(lease.monthlyPayment) + ' → ' + fmt(buyout.monthlyPayment);
+  $('cmpFinTotal').textContent = fmt(finTotalOwn);
+  $('cmpLeaseTotal').textContent = fmt(lease.totalCost);
+  $('cmpBuyoutTotal').textContent = fmt(leaseBuyoutTotalOwn);
+  $('cmpFinInterest').textContent = fmt(fin.totalInterest);
+  $('cmpLeaseInterest').textContent = fmt(lease.totalFinanceCharges);
+  $('cmpBuyoutInterest').textContent = fmt(totalInterestLB);
+  $('cmpFinTax').textContent = fmt(fin.totalTax);
+  $('cmpLeaseTax').textContent = fmt(lease.leaseTax);
+  $('cmpBuyoutTax').textContent = fmt(totalTaxLB);
+  $('cmpFinTermTotal').textContent = fTerm + ' mo';
+  $('cmpLeaseTermTotal').textContent = lTerm + ' mo';
+  $('cmpBuyoutTermTotal').textContent = (lTerm + bTerm) + ' mo';
+
+  const finCheaper = fin.monthlyPayment <= lease.monthlyPayment;
+  $('finMonthlyCard').className = 'result-card' + (finCheaper ? ' finance-highlight' : '');
+  $('leaseMonthlyCard').className = 'result-card' + (!finCheaper ? ' lease-highlight' : '');
+
+  const badge = $('winnerBadge');
+  if (fin.monthlyPayment < lease.monthlyPayment) {
+    badge.className = 'winner-badge winner-finance'; badge.textContent = '✓ Finance — Lower Monthly';
+  } else if (lease.monthlyPayment < fin.monthlyPayment) {
+    badge.className = 'winner-badge winner-lease'; badge.textContent = '✓ Lease — Lower Monthly';
+  } else {
+    badge.className = 'winner-badge'; badge.textContent = '= Equal Monthly';
+  }
+
+  // Finance amortization
+  $('amortBody').innerHTML = finSchedule.map(r => `<tr><td>${r.month}</td><td>${fmt(r.payment)}</td><td>${fmt(r.interest)}</td><td>${fmt(r.principal)}</td><td>${fmt(r.balance)}</td></tr>`).join('');
+
+  // Combined lease+buyout schedule
+  let lbRows = '<tr class="phase-row"><td colspan="5">Phase 1 — Lease (Months 1–' + lTerm + ')</td></tr>';
+  for (let m = 1; m <= lTerm; m++) {
+    const depRem = Math.max(0, lease.netCap - lease.monthlyDepreciation * m);
+    lbRows += `<tr><td>${m}</td><td>${fmt(lease.monthlyPayment)}</td><td>${fmt(lease.monthlyDepreciation)}</td><td>${fmt(lease.financeCharge)}</td><td>${fmt(depRem)}</td></tr>`;
+  }
+  lbRows += '<tr class="phase-row"><td colspan="5">Phase 2 — Buyout Loan (Months ' + (lTerm+1) + '–' + (lTerm+bTerm) + ')</td></tr>';
+  buyoutSchedule.forEach((r, i) => {
+    lbRows += `<tr><td>${lTerm + r.month}</td><td>${fmt(r.payment)}</td><td>${fmt(r.principal)}</td><td>${fmt(r.interest)}</td><td>${fmt(r.balance)}</td></tr>`;
+  });
+  $('leaseBuyoutBody').innerHTML = lbRows;
+
+  renderCharts(finSchedule, fin, lease, buyout, finTotalOwn, leaseBuyoutTotalOwn, totalInterestFin, totalInterestLB, totalTaxFin, totalTaxLB);
+}
+
+function renderCharts(schedule, fin, lease, buyout, finTotalOwn, lbTotalOwn, finInt, lbInt, finTaxAmt, lbTaxAmt) {
+  const c = getChartColors();
+  const cf = { family: "'DM Sans', sans-serif", size: 11, weight: '500' };
+
+  // Balance chart
+  if (balanceChart) balanceChart.destroy();
+  balanceChart = new Chart($('balanceCanvas'), {
+    type: 'line',
+    data: {
+      labels: schedule.map(r => r.month),
+      datasets: [
+        { label: 'Balance', data: schedule.map(r => r.balance), borderColor: c.finance, backgroundColor: c.finance + '18', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 },
+        { label: 'Interest', data: schedule.map(r => r.interest), borderColor: c.warn, tension: 0.3, pointRadius: 0, borderWidth: 1.5, borderDash: [4,4] },
+        { label: 'Principal', data: schedule.map(r => r.principal), borderColor: c.gold, tension: 0.3, pointRadius: 0, borderWidth: 1.5, borderDash: [2,2] }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: c.text3, font: cf, boxWidth: 12, padding: 16 } }, tooltip: { backgroundColor: '#1a1f2e', titleFont: cf, bodyFont: cf, cornerRadius: 8, padding: 10 } },
+      scales: {
+        x: { ticks: { color: c.text3, font: cf, maxTicksLimit: 12 }, grid: { color: c.border + '44' } },
+        y: { ticks: { color: c.text3, font: cf, callback: v => fmtShort(v) }, grid: { color: c.border + '44' } }
+      }
+    }
+  });
+
+  // Cost breakdown donut
+  if (breakdownChart) breakdownChart.destroy();
+  breakdownChart = new Chart($('breakdownCanvas'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Finance Principal', 'Finance Interest', 'Finance Tax', 'Lease Payments', 'Lease Tax', 'Buyout Payments', 'Buyout Tax'],
+      datasets: [{ data: [fin.loanAmount, fin.totalInterest, fin.totalTax, lease.totalLeasePayments, lease.leaseTax, buyout.totalPaid, buyout.buyoutTax],
+        backgroundColor: [c.finance, c.finance+'88', c.gold, c.lease, c.lease+'88', c.buyout, c.buyout+'88'], borderWidth: 0 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '60%',
+      plugins: { legend: { position: 'right', labels: { color: c.text3, font: cf, boxWidth: 10, padding: 8 } },
+        tooltip: { callbacks: { label: ctx => ' ' + ctx.label + ': ' + fmt(ctx.parsed) } } }
+    }
+  });
+
+  // Side by side bar (now 3 columns)
+  if (comparisonChart) comparisonChart.destroy();
+  comparisonChart = new Chart($('comparisonCanvas'), {
+    type: 'bar',
+    data: {
+      labels: ['Monthly', 'Total Cost', 'Interest', 'Tax'],
+      datasets: [
+        { label: 'Finance', data: [fin.monthlyPayment, finTotalOwn, finInt, finTaxAmt], backgroundColor: c.finance+'cc', borderRadius: 6, barPercentage: 0.5 },
+        { label: 'Lease Only', data: [lease.monthlyPayment, lease.totalCost, lease.totalFinanceCharges, lease.leaseTax], backgroundColor: c.lease+'cc', borderRadius: 6, barPercentage: 0.5 },
+        { label: 'Lease+Buyout', data: [lease.monthlyPayment, lbTotalOwn, lbInt, lbTaxAmt], backgroundColor: c.buyout+'cc', borderRadius: 6, barPercentage: 0.5 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: c.text3, font: cf, boxWidth: 12, padding: 16 } },
+        tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + fmt(ctx.parsed.y) } } },
+      scales: {
+        x: { ticks: { color: c.text3, font: cf }, grid: { display: false } },
+        y: { ticks: { color: c.text3, font: cf, callback: v => fmtShort(v) }, grid: { color: c.border + '44' } }
+      }
+    }
+  });
+
+  // Cost stacked bar
+  if (costStackChart) costStackChart.destroy();
+  costStackChart = new Chart($('costStackCanvas'), {
+    type: 'bar',
+    data: {
+      labels: ['Finance (Direct)', 'Lease + Buyout'],
+      datasets: [
+        { label: 'Down Payment', data: [num('downPayment'), num('downPayment')], backgroundColor: '#888780' },
+        { label: 'Principal / Depreciation', data: [fin.loanAmount, lease.totalLeasePayments - lease.totalFinanceCharges + buyout.loanAmount - buyout.totalInterest], backgroundColor: c.finance },
+        { label: 'Interest / Charges', data: [finInt, lbInt], backgroundColor: c.lease },
+        { label: 'Tax', data: [finTaxAmt, lbTaxAmt], backgroundColor: c.warn }
+      ]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { stacked: true, ticks: { color: c.text3, font: cf, callback: v => fmtShort(v) }, grid: { color: c.border + '44' } },
+        y: { stacked: true, ticks: { color: c.text3, font: cf }, grid: { display: false } }
+      },
+      plugins: { legend: { labels: { color: c.text3, font: cf, boxWidth: 10, padding: 12 } },
+        tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + fmt(ctx.parsed.x) } } }
+    }
+  });
+}
+
+calc();
+</script>
+</body>
+</html>
